@@ -1,0 +1,41 @@
+pip install fastapi uvicorn
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from typing import Dict
+import re
+import json
+
+app = FastAPI()
+
+# Enable CORS for GET requests from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
+
+@app.get("/execute")
+async def execute(q: str):
+    # Match against known templates
+    if match := re.match(r"(?i)what is the status of ticket (\d+)", q):
+        ticket_id = int(match.group(1))
+        return {
+            "name": "get_ticket_status",
+            "arguments": json.dumps({"ticket_id": ticket_id})
+        }
+
+    elif match := re.match(r"(?i)who is assigned to ticket (\d+)", q):
+        ticket_id = int(match.group(1))
+        return {
+            "name": "get_ticket_assignee",
+            "arguments": json.dumps({"ticket_id": ticket_id})
+        }
+
+    # Add more patterns here as needed
+
+    return {
+        "name": "unknown",
+        "arguments": "{}"
+    }
+uvicorn main:app --reload
